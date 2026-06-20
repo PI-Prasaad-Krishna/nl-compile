@@ -76,24 +76,81 @@ class Parser:
             limit_expr = self.expr()
             self.skip_optional(TokenType.AND)
             
-            # The body of the loop can be any valid statement!
             body_stmt = self.statement()
             return ast_nodes.LoopStmt(limit_expr, body_stmt)
+
+        # "if x is greater than 10 then print x"
+        if self.current_token.type == TokenType.IF:
+            self.eat(TokenType.IF)
+            condition_expr = self.expr()
+            self.eat(TokenType.THEN)
+            body_stmt = self.statement()
+            return ast_nodes.IfStmt(condition_expr, body_stmt)
+
+        # "define action greet with name and do print name"
+        if self.current_token.type == TokenType.DEFINE:
+            self.eat(TokenType.DEFINE)
+            self.eat(TokenType.ACTION)
+            func_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            self.eat(TokenType.WITH)
+            param_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            self.skip_optional(TokenType.AND)
+            self.eat(TokenType.DO)
+            body_stmt = self.statement()
+            return ast_nodes.FuncDefStmt(func_name, param_name, body_stmt)
+
+        # "run greet with 'Alice'"
+        if self.current_token.type == TokenType.RUN:
+            self.eat(TokenType.RUN)
+            func_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            self.eat(TokenType.WITH)
+            arg_expr = self.expr()
+            return ast_nodes.FuncCallStmt(func_name, arg_expr)
 
         self.error(f"Invalid statement starting with '{self.current_token.value}'")
 
     def expr(self):
-        return self.term()
+        node = self.term()
+        
+        if self.current_token.type == TokenType.IS:
+            self.eat(TokenType.IS)
+            if self.current_token.type == TokenType.GREATER:
+                self.eat(TokenType.GREATER)
+                self.skip_optional(TokenType.THAN)
+                right = self.term()
+                return ast_nodes.CompareOp(node, "greater", right)
+            elif self.current_token.type == TokenType.LESS:
+                self.eat(TokenType.LESS)
+                self.skip_optional(TokenType.THAN)
+                right = self.term()
+                return ast_nodes.CompareOp(node, "less", right)
+            elif self.current_token.type == TokenType.EQUAL:
+                self.eat(TokenType.EQUAL)
+                self.skip_optional(TokenType.TO)
+                right = self.term()
+                return ast_nodes.CompareOp(node, "equal", right)
+            else:
+                self.error("Expected 'greater', 'less', or 'equal' after 'is'")
+                
+        return node
 
     def term(self):
         node = self.factor()
         
-        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
+        while self.current_token.type in (TokenType.PLUS, TokenType.MINUS, TokenType.TIMES, TokenType.DIVIDED):
             token = self.current_token
             if token.type == TokenType.PLUS:
                 self.eat(TokenType.PLUS)
             elif token.type == TokenType.MINUS:
                 self.eat(TokenType.MINUS)
+            elif token.type == TokenType.TIMES:
+                self.eat(TokenType.TIMES)
+            elif token.type == TokenType.DIVIDED:
+                self.eat(TokenType.DIVIDED)
+                self.eat(TokenType.BY)
                 
             right = self.factor()
             node = ast_nodes.BinOp(left=node, op=token, right=right)

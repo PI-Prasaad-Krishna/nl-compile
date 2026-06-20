@@ -22,6 +22,20 @@ class TokenType(enum.Enum):
     TIMES = 'TIMES'
     DIVIDED = 'DIVIDED'
     BY = 'BY'
+    
+    # Phase 2 Keywords
+    IF = 'IF'
+    THEN = 'THEN'
+    IS = 'IS'
+    GREATER = 'GREATER'
+    LESS = 'LESS'
+    THAN = 'THAN'
+    EQUAL = 'EQUAL'
+    DEFINE = 'DEFINE'
+    ACTION = 'ACTION'
+    WITH = 'WITH'
+    DO = 'DO'
+    RUN = 'RUN'
 
 KEYWORDS = {
     'set': TokenType.SET,
@@ -39,6 +53,18 @@ KEYWORDS = {
     'times': TokenType.TIMES,
     'divided': TokenType.DIVIDED,
     'by': TokenType.BY,
+    'if': TokenType.IF,
+    'then': TokenType.THEN,
+    'is': TokenType.IS,
+    'greater': TokenType.GREATER,
+    'less': TokenType.LESS,
+    'than': TokenType.THAN,
+    'equal': TokenType.EQUAL,
+    'define': TokenType.DEFINE,
+    'action': TokenType.ACTION,
+    'with': TokenType.WITH,
+    'do': TokenType.DO,
+    'run': TokenType.RUN,
 }
 
 class Token:

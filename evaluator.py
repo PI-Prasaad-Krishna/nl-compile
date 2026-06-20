@@ -47,11 +47,58 @@ class Evaluator:
             self.visit(node.body_stmt)
         return None
 
+    def visit_IfStmt(self, node):
+        condition = self.visit(node.condition_expr)
+        if condition:
+            self.visit(node.body_stmt)
+        return None
+
+    def visit_FuncDefStmt(self, node):
+        self.env.set(node.name, node)
+        return None
+
+    def visit_FuncCallStmt(self, node):
+        func_node = self.env.get(node.name)
+        if not isinstance(func_node, ast_nodes.FuncDefStmt):
+            raise EvaluatorError(f"'{node.name}' is not a valid action to run")
+            
+        arg_val = self.visit(node.arg_expr)
+        
+        # Create a new local scope
+        local_env = Environment(parent=self.env)
+        local_env.set(func_node.param_name, arg_val)
+        
+        # Save old environment and inject new one
+        old_env = self.env
+        self.env = local_env
+        
+        # Execute body
+        try:
+            self.visit(func_node.body_stmt)
+        finally:
+            # Restore old environment
+            self.env = old_env
+        return None
+
+    def visit_CompareOp(self, node):
+        left_val = self.visit(node.left)
+        right_val = self.visit(node.right)
+        
+        if node.op_str == "greater":
+            return left_val > right_val
+        elif node.op_str == "less":
+            return left_val < right_val
+        elif node.op_str == "equal":
+            return left_val == right_val
+        raise EvaluatorError(f"Unknown comparison: {node.op_str}")
+
     def visit_BinOp(self, node):
         left_val = self.visit(node.left)
         right_val = self.visit(node.right)
         
         if node.op.type == TokenType.PLUS:
+            if isinstance(left_val, str) or isinstance(right_val, str):
+                return str(left_val) + str(right_val)
             return left_val + right_val
         elif node.op.type == TokenType.MINUS:
             return left_val - right_val

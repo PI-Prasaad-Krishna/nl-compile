@@ -19,10 +19,32 @@ class LoopStmt(ASTNode):
         self.limit_expr = limit_expr
         self.body_stmt = body_stmt
 
+class IfStmt(ASTNode):
+    def __init__(self, condition_expr, body_stmt):
+        self.condition_expr = condition_expr
+        self.body_stmt = body_stmt
+
+class FuncDefStmt(ASTNode):
+    def __init__(self, name, param_name, body_stmt):
+        self.name = name
+        self.param_name = param_name
+        self.body_stmt = body_stmt
+
+class FuncCallStmt(ASTNode):
+    def __init__(self, name, arg_expr):
+        self.name = name
+        self.arg_expr = arg_expr
+
 class BinOp(ASTNode):
     def __init__(self, left, op, right):
         self.left = left
         self.op = op
+        self.right = right
+
+class CompareOp(ASTNode):
+    def __init__(self, left, op_str, right):
+        self.left = left
+        self.op_str = op_str # "greater", "less", "equal"
         self.right = right
 
 class NumberLiteral(ASTNode):
