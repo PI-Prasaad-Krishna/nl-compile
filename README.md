@@ -68,11 +68,12 @@ print greeting
 ```
 
 ### 4. Printing
-To output a value to the terminal, simply use the `print` keyword.
+To output a value to the terminal, simply use the `print` keyword. You can string multiple expressions together by placing them next to each other, and they will print separated by a space.
 
 ```text
 print "Execution completed!"
-print x
+set name to "Prasaad"
+print "Hello" name
 ```
 
 ### 5. Conditionals (If Statements)
@@ -81,18 +82,30 @@ NL supports boolean logic using conversational comparators:
 - `is less than`
 - `is equal to`
 
+You can execute a single statement, or use `do` and `end` to execute a multi-line block!
+
 ```text
 set age to 18
-if age is greater than 10 then print "You are old enough!"
+if age is greater than 10 then do
+    print "You are old enough!"
+    print "Congratulations!"
+end
 ```
 
 ### 6. Loops
-You can execute any valid statement repeatedly using `loop till <number> and <statement>`. The loop will execute exactly `<number>` times.
+You can execute any valid statement repeatedly using `loop till <number> and <statement>`.
+You can also iterate over lists natively using `for each <item> in <list>`.
+Both loops support multi-line blocks with `do` and `end`.
 
 ```text
 set count to 0
-loop till 5 and set count to count plus 1
-print count
+loop till 5 and do
+    set count to count plus 1
+    print count
+end
+
+create list colors containing "red", "blue", "green"
+for each color in colors print color
 ```
 
 ### 7. Actions (Functions)
@@ -100,13 +113,31 @@ You can define reusable blocks of code called `actions`. Actions create their ow
 
 **Defining an action:**
 ```text
-define action greet with name and do print "Hello " plus name
+define action greet with name and do
+    print "Hello " plus name
+end
 ```
 
 **Running an action:**
 ```text
 run greet with "Alice"
 run greet with "Bob"
+```
+
+### 8. Lists & Arrays
+You can group items together into Lists using a highly conversational syntax, and retrieve them via 1-based indexing.
+
+```text
+create list colors containing "red", "blue", "green"
+print item 1 of colors
+```
+
+### 9. User Input (Interactive Scripts)
+You can pause the script, prompt the user for input, and save the result dynamically.
+
+```text
+ask "What is your name? " and set it to name
+print "Welcome, " plus name
 ```
 
 ## Architecture

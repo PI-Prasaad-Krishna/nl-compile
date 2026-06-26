@@ -29,15 +29,47 @@ class Evaluator:
             result = self.visit(stmt)
         return result
 
+    def visit_BlockStmt(self, node):
+        result = None
+        for stmt in node.statements:
+            result = self.visit(stmt)
+        return result
+
     def visit_VarAssign(self, node):
         value = self.visit(node.expr)
         self.env.set(node.var_name, value)
         return value
 
+    def visit_AskStmt(self, node):
+        prompt = self.visit(node.prompt_expr)
+        user_input = input(str(prompt))
+        
+        try:
+            if '.' in user_input:
+                val = float(user_input)
+            else:
+                val = int(user_input)
+        except ValueError:
+            val = user_input
+            
+        self.env.set(node.var_name, val)
+        return val
+
     def visit_PrintStmt(self, node):
-        value = self.visit(node.expr)
-        print(value)
-        return value
+        values = [str(self.visit(e)) for e in node.exprs]
+        output = " ".join(values)
+        print(output)
+        return output
+
+    def visit_ForEachStmt(self, node):
+        lst = self.env.get(node.list_name)
+        if not isinstance(lst, list):
+            raise EvaluatorError(f"'{node.list_name}' is not a list")
+            
+        for item in lst:
+            self.env.set(node.var_name, item)
+            self.visit(node.body_stmt)
+        return None
 
     def visit_LoopStmt(self, node):
         limit = self.visit(node.limit_expr)
@@ -110,6 +142,23 @@ class Evaluator:
             return left_val / right_val
             
         raise EvaluatorError(f"Unsupported operation: {node.op.type}")
+
+    def visit_ListCreateExpr(self, node):
+        return [self.visit(item) for item in node.items]
+
+    def visit_ListAccessExpr(self, node):
+        lst = self.env.get(node.list_name)
+        if not isinstance(lst, list):
+            raise EvaluatorError(f"'{node.list_name}' is not a list")
+        idx = self.visit(node.index_expr)
+        if not isinstance(idx, int):
+            raise EvaluatorError("List index must be an integer")
+        
+        # 1-based indexing for natural language
+        if idx < 1 or idx > len(lst):
+            raise EvaluatorError(f"Index {idx} is out of bounds for list '{node.list_name}'")
+            
+        return lst[idx - 1]
 
     def visit_NumberLiteral(self, node):
         return node.value

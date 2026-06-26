@@ -5,6 +5,7 @@ class TokenType(enum.Enum):
     STRING = 'STRING'
     IDENTIFIER = 'IDENTIFIER'
     EOF = 'EOF'
+    COMMA = 'COMMA'
     
     # Keywords
     SET = 'SET'
@@ -36,6 +37,17 @@ class TokenType(enum.Enum):
     WITH = 'WITH'
     DO = 'DO'
     RUN = 'RUN'
+    
+    # Phase 3 Keywords
+    END = 'END'
+    LIST = 'LIST'
+    CONTAINING = 'CONTAINING'
+    ITEM = 'ITEM'
+    OF = 'OF'
+    ASK = 'ASK'
+    FOR = 'FOR'
+    EACH = 'EACH'
+    IN = 'IN'
 
 KEYWORDS = {
     'set': TokenType.SET,
@@ -65,6 +77,15 @@ KEYWORDS = {
     'with': TokenType.WITH,
     'do': TokenType.DO,
     'run': TokenType.RUN,
+    'end': TokenType.END,
+    'list': TokenType.LIST,
+    'containing': TokenType.CONTAINING,
+    'item': TokenType.ITEM,
+    'of': TokenType.OF,
+    'ask': TokenType.ASK,
+    'for': TokenType.FOR,
+    'each': TokenType.EACH,
+    'in': TokenType.IN,
 }
 
 class Token:
@@ -150,6 +171,11 @@ class Lexer:
             if self.current_char.isspace():
                 self.skip_whitespace()
                 continue
+                
+            if self.current_char == ',':
+                start_col = self.column
+                self.advance()
+                return Token(TokenType.COMMA, ',', self.line, start_col)
                 
             if self.current_char.isdigit():
                 return self.number()

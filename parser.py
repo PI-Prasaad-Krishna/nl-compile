@@ -24,6 +24,8 @@ class Parser:
     def skip_optional(self, token_type):
         if self.current_token.type == token_type:
             self.eat(token_type)
+            return True
+        return False
 
     def parse(self):
         statements = []
@@ -33,18 +35,45 @@ class Parser:
                 statements.append(stmt)
         return ast_nodes.Program(statements)
 
+    def parse_body(self):
+        if self.current_token.type == TokenType.DO:
+            self.eat(TokenType.DO)
+            statements = []
+            while self.current_token.type not in (TokenType.END, TokenType.EOF):
+                stmt = self.statement()
+                if stmt:
+                    statements.append(stmt)
+            if self.current_token.type == TokenType.END:
+                self.eat(TokenType.END)
+            return ast_nodes.BlockStmt(statements)
+        else:
+            return self.statement()
+
     def statement(self):
-        # "create variable x and set it to 10"
+        # "create variable x and set it to 10" or "create list colors containing 1, 2, 3"
         if self.current_token.type == TokenType.CREATE:
             self.eat(TokenType.CREATE)
-            self.skip_optional(TokenType.VARIABLE)
-            if self.current_token.type == TokenType.IDENTIFIER:
+            
+            if self.current_token.type == TokenType.LIST:
+                self.eat(TokenType.LIST)
+                list_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.CONTAINING)
+                
+                items = []
+                items.append(self.expr())
+                while self.current_token.type == TokenType.COMMA:
+                    self.eat(TokenType.COMMA)
+                    items.append(self.expr())
+                return ast_nodes.VarAssign(list_name, ast_nodes.ListCreateExpr(items))
+                
+            else:
+                self.skip_optional(TokenType.VARIABLE)
                 var_name = self.current_token.value
                 self.eat(TokenType.IDENTIFIER)
                 self.skip_optional(TokenType.AND)
                 self.eat(TokenType.SET)
                 
-                # Check for "it" or the variable name again
                 if self.current_token.type == TokenType.IDENTIFIER and self.current_token.value == 'it':
                     self.eat(TokenType.IDENTIFIER)
                 elif self.current_token.type == TokenType.IDENTIFIER and self.current_token.value == var_name:
@@ -63,31 +92,57 @@ class Parser:
             expr = self.expr()
             return ast_nodes.VarAssign(var_name, expr)
 
-        # "print x"
+        # "ask 'name?' and set it to name"
+        if self.current_token.type == TokenType.ASK:
+            self.eat(TokenType.ASK)
+            prompt_expr = self.expr()
+            self.skip_optional(TokenType.AND)
+            self.eat(TokenType.SET)
+            if self.current_token.type == TokenType.IDENTIFIER and self.current_token.value == 'it':
+                self.eat(TokenType.IDENTIFIER)
+            self.eat(TokenType.TO)
+            var_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            return ast_nodes.AskStmt(prompt_expr, var_name)
+
+        # "print x" or "print 'Hello' name"
         if self.current_token.type == TokenType.PRINT:
             self.eat(TokenType.PRINT)
-            expr = self.expr()
-            return ast_nodes.PrintStmt(expr)
+            exprs = [self.expr()]
+            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM):
+                exprs.append(self.expr())
+            return ast_nodes.PrintStmt(exprs)
 
-        # "loop till 10 and print x" or "loop till 5 and set z to 10"
+        # "for each color in colors print color"
+        if self.current_token.type == TokenType.FOR:
+            self.eat(TokenType.FOR)
+            self.eat(TokenType.EACH)
+            var_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            self.eat(TokenType.IN)
+            list_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            body_stmt = self.parse_body()
+            return ast_nodes.ForEachStmt(var_name, list_name, body_stmt)
+
+        # "loop till 5 and do ... end"
         if self.current_token.type == TokenType.LOOP:
             self.eat(TokenType.LOOP)
             self.eat(TokenType.TILL)
             limit_expr = self.expr()
             self.skip_optional(TokenType.AND)
-            
-            body_stmt = self.statement()
+            body_stmt = self.parse_body()
             return ast_nodes.LoopStmt(limit_expr, body_stmt)
 
-        # "if x is greater than 10 then print x"
+        # "if x is greater than 10 then do ... end"
         if self.current_token.type == TokenType.IF:
             self.eat(TokenType.IF)
             condition_expr = self.expr()
             self.eat(TokenType.THEN)
-            body_stmt = self.statement()
+            body_stmt = self.parse_body()
             return ast_nodes.IfStmt(condition_expr, body_stmt)
 
-        # "define action greet with name and do print name"
+        # "define action greet with name and do ... end"
         if self.current_token.type == TokenType.DEFINE:
             self.eat(TokenType.DEFINE)
             self.eat(TokenType.ACTION)
@@ -97,8 +152,7 @@ class Parser:
             param_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
             self.skip_optional(TokenType.AND)
-            self.eat(TokenType.DO)
-            body_stmt = self.statement()
+            body_stmt = self.parse_body()
             return ast_nodes.FuncDefStmt(func_name, param_name, body_stmt)
 
         # "run greet with 'Alice'"
@@ -168,5 +222,13 @@ class Parser:
         elif token.type == TokenType.IDENTIFIER:
             self.eat(TokenType.IDENTIFIER)
             return ast_nodes.Identifier(token.value)
+        elif token.type == TokenType.ITEM:
+            # "item 1 of colors"
+            self.eat(TokenType.ITEM)
+            index_expr = self.expr()
+            self.eat(TokenType.OF)
+            list_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            return ast_nodes.ListAccessExpr(list_name, index_expr)
             
         self.error(f"Unexpected factor: '{token.value}'")
