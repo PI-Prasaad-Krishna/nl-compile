@@ -34,6 +34,11 @@ class ForEachStmt(ASTNode):
         self.list_name = list_name
         self.body_stmt = body_stmt
 
+class WhileStmt(ASTNode):
+    def __init__(self, condition_expr, body_stmt):
+        self.condition_expr = condition_expr
+        self.body_stmt = body_stmt
+
 class IfStmt(ASTNode):
     def __init__(self, condition_expr, body_stmt):
         self.condition_expr = condition_expr
@@ -50,6 +55,10 @@ class FuncCallStmt(ASTNode):
         self.name = name
         self.arg_expr = arg_expr
 
+class ReturnStmt(ASTNode):
+    def __init__(self, expr):
+        self.expr = expr
+
 class BinOp(ASTNode):
     def __init__(self, left, op, right):
         self.left = left
@@ -62,6 +71,12 @@ class CompareOp(ASTNode):
         self.op_str = op_str # "greater", "less", "equal"
         self.right = right
 
+class LogicalOp(ASTNode):
+    def __init__(self, left, op_str, right):
+        self.left = left
+        self.op_str = op_str # "and", "or"
+        self.right = right
+
 class ListCreateExpr(ASTNode):
     def __init__(self, items):
         self.items = items
@@ -70,6 +85,29 @@ class ListAccessExpr(ASTNode):
     def __init__(self, list_name, index_expr):
         self.list_name = list_name
         self.index_expr = index_expr
+
+class ObjectCreateExpr(ASTNode):
+    def __init__(self, pairs):
+        self.pairs = pairs
+
+class PropertyAccessExpr(ASTNode):
+    def __init__(self, prop_expr, obj_name):
+        self.prop_expr = prop_expr
+        self.obj_name = obj_name
+
+class FileReadExpr(ASTNode):
+    def __init__(self, path_expr):
+        self.path_expr = path_expr
+
+class FileWriteStmt(ASTNode):
+    def __init__(self, content_expr, path_expr):
+        self.content_expr = content_expr
+        self.path_expr = path_expr
+
+class TryCatchStmt(ASTNode):
+    def __init__(self, try_stmt, catch_stmt):
+        self.try_stmt = try_stmt
+        self.catch_stmt = catch_stmt
 
 class NumberLiteral(ASTNode):
     def __init__(self, value):

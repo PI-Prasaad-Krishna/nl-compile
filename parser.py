@@ -50,7 +50,9 @@ class Parser:
             return self.statement()
 
     def statement(self):
-        # "create variable x and set it to 10" or "create list colors containing 1, 2, 3"
+        # "create variable x and set it to 10"
+        # "create list colors containing 1, 2, 3"
+        # "create object user containing 'name' as 'Alice' and 'age' as 25"
         if self.current_token.type == TokenType.CREATE:
             self.eat(TokenType.CREATE)
             
@@ -66,6 +68,25 @@ class Parser:
                     self.eat(TokenType.COMMA)
                     items.append(self.expr())
                 return ast_nodes.VarAssign(list_name, ast_nodes.ListCreateExpr(items))
+                
+            elif self.current_token.type == TokenType.OBJECT:
+                self.eat(TokenType.OBJECT)
+                obj_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.CONTAINING)
+                
+                pairs = []
+                key = self.expr()
+                self.eat(TokenType.AS)
+                val = self.expr()
+                pairs.append((key, val))
+                while self.current_token.type == TokenType.COMMA:
+                    self.eat(TokenType.COMMA)
+                    key = self.expr()
+                    self.eat(TokenType.AS)
+                    val = self.expr()
+                    pairs.append((key, val))
+                return ast_nodes.VarAssign(obj_name, ast_nodes.ObjectCreateExpr(pairs))
                 
             else:
                 self.skip_optional(TokenType.VARIABLE)
@@ -109,9 +130,18 @@ class Parser:
         if self.current_token.type == TokenType.PRINT:
             self.eat(TokenType.PRINT)
             exprs = [self.expr()]
-            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM):
+            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN):
                 exprs.append(self.expr())
             return ast_nodes.PrintStmt(exprs)
+
+        # "write x into file y"
+        if self.current_token.type == TokenType.WRITE:
+            self.eat(TokenType.WRITE)
+            content_expr = self.expr()
+            self.eat(TokenType.INTO)
+            self.eat(TokenType.FILE)
+            path_expr = self.expr()
+            return ast_nodes.FileWriteStmt(content_expr, path_expr)
 
         # "for each color in colors print color"
         if self.current_token.type == TokenType.FOR:
@@ -124,6 +154,13 @@ class Parser:
             self.eat(TokenType.IDENTIFIER)
             body_stmt = self.parse_body()
             return ast_nodes.ForEachStmt(var_name, list_name, body_stmt)
+
+        # "while count is less than 10 do ... end"
+        if self.current_token.type == TokenType.WHILE:
+            self.eat(TokenType.WHILE)
+            condition_expr = self.expr()
+            body_stmt = self.parse_body()
+            return ast_nodes.WhileStmt(condition_expr, body_stmt)
 
         # "loop till 5 and do ... end"
         if self.current_token.type == TokenType.LOOP:
@@ -142,6 +179,18 @@ class Parser:
             body_stmt = self.parse_body()
             return ast_nodes.IfStmt(condition_expr, body_stmt)
 
+        # "try to do ... end but if it fails do ... end"
+        if self.current_token.type == TokenType.TRY:
+            self.eat(TokenType.TRY)
+            self.skip_optional(TokenType.TO)
+            try_stmt = self.parse_body()
+            self.eat(TokenType.BUT)
+            self.skip_optional(TokenType.IF)
+            self.eat(TokenType.IT)
+            self.eat(TokenType.FAILS)
+            catch_stmt = self.parse_body()
+            return ast_nodes.TryCatchStmt(try_stmt, catch_stmt)
+
         # "define action greet with name and do ... end"
         if self.current_token.type == TokenType.DEFINE:
             self.eat(TokenType.DEFINE)
@@ -155,7 +204,13 @@ class Parser:
             body_stmt = self.parse_body()
             return ast_nodes.FuncDefStmt(func_name, param_name, body_stmt)
 
-        # "run greet with 'Alice'"
+        # "return x"
+        if self.current_token.type == TokenType.RETURN:
+            self.eat(TokenType.RETURN)
+            expr = self.expr()
+            return ast_nodes.ReturnStmt(expr)
+
+        # Backwards compatibility: "run greet with 'Alice'" as standalone statement
         if self.current_token.type == TokenType.RUN:
             self.eat(TokenType.RUN)
             func_name = self.current_token.value
@@ -167,6 +222,18 @@ class Parser:
         self.error(f"Invalid statement starting with '{self.current_token.value}'")
 
     def expr(self):
+        node = self.expr_compare()
+        
+        while self.current_token.type in (TokenType.AND, TokenType.OR):
+            op = self.current_token.type
+            self.eat(op)
+            right = self.expr_compare()
+            op_str = "and" if op == TokenType.AND else "or"
+            node = ast_nodes.LogicalOp(node, op_str, right)
+            
+        return node
+
+    def expr_compare(self):
         node = self.term()
         
         if self.current_token.type == TokenType.IS:
@@ -230,5 +297,27 @@ class Parser:
             list_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
             return ast_nodes.ListAccessExpr(list_name, index_expr)
+        elif token.type == TokenType.PROPERTY:
+            # "property 'name' of user"
+            self.eat(TokenType.PROPERTY)
+            prop_expr = self.expr()
+            self.eat(TokenType.OF)
+            obj_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            return ast_nodes.PropertyAccessExpr(prop_expr, obj_name)
+        elif token.type == TokenType.READ:
+            # "read file 'data.txt'"
+            self.eat(TokenType.READ)
+            self.eat(TokenType.FILE)
+            path_expr = self.expr()
+            return ast_nodes.FileReadExpr(path_expr)
+        elif token.type == TokenType.RUN:
+            # "run calculate with 5"
+            self.eat(TokenType.RUN)
+            func_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            self.eat(TokenType.WITH)
+            arg_expr = self.expr()
+            return ast_nodes.FuncCallStmt(func_name, arg_expr)
             
         self.error(f"Unexpected factor: '{token.value}'")

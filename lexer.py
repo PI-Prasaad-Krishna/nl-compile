@@ -49,6 +49,22 @@ class TokenType(enum.Enum):
     EACH = 'EACH'
     IN = 'IN'
 
+    # Phase 4 Keywords
+    OBJECT = 'OBJECT'
+    AS = 'AS'
+    PROPERTY = 'PROPERTY'
+    OR = 'OR'
+    READ = 'READ'
+    FILE = 'FILE'
+    WRITE = 'WRITE'
+    INTO = 'INTO'
+    RETURN = 'RETURN'
+    WHILE = 'WHILE'
+    TRY = 'TRY'
+    BUT = 'BUT'
+    IT = 'IT'
+    FAILS = 'FAILS'
+
 KEYWORDS = {
     'set': TokenType.SET,
     'to': TokenType.TO,
@@ -86,6 +102,20 @@ KEYWORDS = {
     'for': TokenType.FOR,
     'each': TokenType.EACH,
     'in': TokenType.IN,
+    'object': TokenType.OBJECT,
+    'as': TokenType.AS,
+    'property': TokenType.PROPERTY,
+    'or': TokenType.OR,
+    'read': TokenType.READ,
+    'file': TokenType.FILE,
+    'write': TokenType.WRITE,
+    'into': TokenType.INTO,
+    'return': TokenType.RETURN,
+    'while': TokenType.WHILE,
+    'try': TokenType.TRY,
+    'but': TokenType.BUT,
+    'it': TokenType.IT,
+    'fails': TokenType.FAILS,
 }
 
 class Token:

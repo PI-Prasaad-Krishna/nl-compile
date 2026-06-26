@@ -5,6 +5,10 @@ from environment import Environment
 class EvaluatorError(Exception):
     pass
 
+class ReturnException(Exception):
+    def __init__(self, value):
+        self.value = value
+
 class Evaluator:
     def __init__(self, tree):
         self.tree = tree
@@ -79,6 +83,11 @@ class Evaluator:
             self.visit(node.body_stmt)
         return None
 
+    def visit_WhileStmt(self, node):
+        while self.visit(node.condition_expr):
+            self.visit(node.body_stmt)
+        return None
+
     def visit_IfStmt(self, node):
         condition = self.visit(node.condition_expr)
         if condition:
@@ -96,20 +105,31 @@ class Evaluator:
             
         arg_val = self.visit(node.arg_expr)
         
-        # Create a new local scope
         local_env = Environment(parent=self.env)
         local_env.set(func_node.param_name, arg_val)
         
-        # Save old environment and inject new one
         old_env = self.env
         self.env = local_env
         
-        # Execute body
         try:
             self.visit(func_node.body_stmt)
+        except ReturnException as e:
+            return e.value
         finally:
-            # Restore old environment
             self.env = old_env
+        return None
+
+    def visit_ReturnStmt(self, node):
+        val = self.visit(node.expr)
+        raise ReturnException(val)
+
+    def visit_TryCatchStmt(self, node):
+        try:
+            self.visit(node.try_stmt)
+        except ReturnException as e:
+            raise e
+        except Exception:
+            self.visit(node.catch_stmt)
         return None
 
     def visit_CompareOp(self, node):
@@ -123,6 +143,18 @@ class Evaluator:
         elif node.op_str == "equal":
             return left_val == right_val
         raise EvaluatorError(f"Unknown comparison: {node.op_str}")
+
+    def visit_LogicalOp(self, node):
+        left_val = self.visit(node.left)
+        if node.op_str == "and":
+            if not left_val:
+                return False
+            return bool(self.visit(node.right))
+        elif node.op_str == "or":
+            if left_val:
+                return True
+            return bool(self.visit(node.right))
+        raise EvaluatorError(f"Unknown logic operator: {node.op_str}")
 
     def visit_BinOp(self, node):
         left_val = self.visit(node.left)
@@ -154,11 +186,42 @@ class Evaluator:
         if not isinstance(idx, int):
             raise EvaluatorError("List index must be an integer")
         
-        # 1-based indexing for natural language
         if idx < 1 or idx > len(lst):
             raise EvaluatorError(f"Index {idx} is out of bounds for list '{node.list_name}'")
             
         return lst[idx - 1]
+
+    def visit_ObjectCreateExpr(self, node):
+        obj = {}
+        for key_expr, val_expr in node.pairs:
+            key = self.visit(key_expr)
+            val = self.visit(val_expr)
+            obj[key] = val
+        return obj
+
+    def visit_PropertyAccessExpr(self, node):
+        obj = self.env.get(node.obj_name)
+        if not isinstance(obj, dict):
+            raise EvaluatorError(f"'{node.obj_name}' is not an object")
+        key = self.visit(node.prop_expr)
+        if key not in obj:
+            raise EvaluatorError(f"Property '{key}' not found in object '{node.obj_name}'")
+        return obj[key]
+
+    def visit_FileReadExpr(self, node):
+        path = self.visit(node.path_expr)
+        try:
+            with open(path, 'r') as f:
+                return f.read()
+        except FileNotFoundError:
+            raise EvaluatorError(f"File not found: {path}")
+
+    def visit_FileWriteStmt(self, node):
+        content = self.visit(node.content_expr)
+        path = self.visit(node.path_expr)
+        with open(path, 'w') as f:
+            f.write(str(content))
+        return None
 
     def visit_NumberLiteral(self, node):
         return node.value
