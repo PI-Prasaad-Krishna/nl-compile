@@ -104,14 +104,44 @@ class Parser:
                 expr = self.expr()
                 return ast_nodes.VarAssign(var_name, expr)
 
-        # "set x to 10"
+        # "set x to 10" or "set property 'age' of user to 26"
         if self.current_token.type == TokenType.SET:
             self.eat(TokenType.SET)
-            var_name = self.current_token.value
-            self.eat(TokenType.IDENTIFIER)
+            
+            if self.current_token.type == TokenType.PROPERTY:
+                self.eat(TokenType.PROPERTY)
+                prop_expr = self.expr()
+                self.eat(TokenType.OF)
+                obj_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.TO)
+                val_expr = self.expr()
+                return ast_nodes.PropertyAssignStmt(prop_expr, obj_name, val_expr)
+            else:
+                var_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.TO)
+                expr = self.expr()
+                return ast_nodes.VarAssign(var_name, expr)
+
+        # "add x to colors"
+        if self.current_token.type == TokenType.ADD:
+            self.eat(TokenType.ADD)
+            item_expr = self.expr()
             self.eat(TokenType.TO)
-            expr = self.expr()
-            return ast_nodes.VarAssign(var_name, expr)
+            list_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            return ast_nodes.ListAddStmt(item_expr, list_name)
+
+        # "remove item 1 from colors"
+        if self.current_token.type == TokenType.REMOVE:
+            self.eat(TokenType.REMOVE)
+            self.eat(TokenType.ITEM)
+            index_expr = self.expr()
+            self.eat(TokenType.FROM)
+            list_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            return ast_nodes.ListRemoveStmt(index_expr, list_name)
 
         # "ask 'name?' and set it to name"
         if self.current_token.type == TokenType.ASK:
@@ -130,7 +160,7 @@ class Parser:
         if self.current_token.type == TokenType.PRINT:
             self.eat(TokenType.PRINT)
             exprs = [self.expr()]
-            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN):
+            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE):
                 exprs.append(self.expr())
             return ast_nodes.PrintStmt(exprs)
 
@@ -256,6 +286,11 @@ class Parser:
             else:
                 self.error("Expected 'greater', 'less', or 'equal' after 'is'")
                 
+        elif self.current_token.type == TokenType.CONTAINS:
+            self.eat(TokenType.CONTAINS)
+            right = self.term()
+            return ast_nodes.CompareOp(node, "contains", right)
+            
         return node
 
     def term(self):
@@ -319,5 +354,32 @@ class Parser:
             self.eat(TokenType.WITH)
             arg_expr = self.expr()
             return ast_nodes.FuncCallStmt(func_name, arg_expr)
+        elif token.type == TokenType.LENGTH:
+            # "length of x"
+            self.eat(TokenType.LENGTH)
+            self.eat(TokenType.OF)
+            return ast_nodes.LengthExpr(self.expr())
+        elif token.type == TokenType.SPLIT:
+            # "split x by y"
+            self.eat(TokenType.SPLIT)
+            string_expr = self.expr()
+            self.eat(TokenType.BY)
+            delimiter_expr = self.expr()
+            return ast_nodes.SplitExpr(string_expr, delimiter_expr)
+        elif token.type == TokenType.UPPERCASE:
+            self.eat(TokenType.UPPERCASE)
+            return ast_nodes.CasingExpr("uppercase", self.expr())
+        elif token.type == TokenType.LOWERCASE:
+            self.eat(TokenType.LOWERCASE)
+            return ast_nodes.CasingExpr("lowercase", self.expr())
+        elif token.type == TokenType.REPLACE:
+            # "replace 'bad' with 'good' in x"
+            self.eat(TokenType.REPLACE)
+            old_expr = self.expr()
+            self.eat(TokenType.WITH)
+            new_expr = self.expr()
+            self.eat(TokenType.IN)
+            target_expr = self.expr()
+            return ast_nodes.ReplaceExpr(old_expr, new_expr, target_expr)
             
         self.error(f"Unexpected factor: '{token.value}'")

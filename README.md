@@ -81,13 +81,14 @@ NL supports boolean logic using conversational comparators:
 - `is greater than`
 - `is less than`
 - `is equal to`
+- `contains` (Checks if a substring exists in a string, or an item in a list)
 
 You can chain multiple conditions using `and` and `or`. You can execute a single statement, or use `do` and `end` to execute a multi-line block!
 
 ```text
 set age to 18
 set name to "Prasaad"
-if age is greater than 10 and name is equal to "Prasaad" then do
+if age is greater than 10 and name contains "Prasaad" then do
     print "You are old enough!"
     print "Congratulations!"
 end
@@ -129,6 +130,7 @@ print result
 ### 8. Data Structures (Lists & Objects)
 Group items together into **Lists** or Key-Value **Objects** using a highly conversational syntax.
 
+**Creating and Accessing:**
 ```text
 create list colors containing "red", "blue", "green"
 print item 1 of colors
@@ -137,7 +139,28 @@ create object user containing "name" as "Prasaad", "age" as 25
 print property "name" of user
 ```
 
-### 9. File I/O
+**Mutating Data:**
+You can edit lists and objects dynamically after they are created!
+```text
+add "yellow" to colors
+remove item 1 from colors
+
+set property "age" of user to 26
+```
+
+### 9. String Manipulation
+Perform complex text operations using natural conversational expressions rather than confusing methods!
+
+```text
+print length of "Hello World"
+print uppercase "hello"
+print lowercase "WORLD"
+print replace "bad" with "good" in "this is a bad idea"
+
+set words to split "apple,banana" by ","
+```
+
+### 10. File I/O
 Read and write directly to your local file system natively.
 
 ```text
@@ -146,7 +169,7 @@ set file_content to read file "data.txt"
 print file_content
 ```
 
-### 10. User Input (Interactive Scripts)
+### 11. User Input (Interactive Scripts)
 You can pause the script, prompt the user for input, and save the result dynamically.
 
 ```text
@@ -154,7 +177,7 @@ ask "What is your name? " and set it to name
 print "Welcome, " plus name
 ```
 
-### 11. Error Catching
+### 12. Error Catching
 Prevent your scripts from crashing by catching runtime errors (like missing files or dividing by zero) natively!
 
 ```text

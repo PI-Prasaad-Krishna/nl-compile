@@ -142,6 +142,8 @@ class Evaluator:
             return left_val < right_val
         elif node.op_str == "equal":
             return left_val == right_val
+        elif node.op_str == "contains":
+            return right_val in left_val
         raise EvaluatorError(f"Unknown comparison: {node.op_str}")
 
     def visit_LogicalOp(self, node):
@@ -231,3 +233,62 @@ class Evaluator:
 
     def visit_Identifier(self, node):
         return self.env.get(node.name)
+
+    def visit_ListAddStmt(self, node):
+        lst = self.env.get(node.list_name)
+        if not isinstance(lst, list):
+            raise EvaluatorError(f"'{node.list_name}' is not a list")
+        item = self.visit(node.item_expr)
+        lst.append(item)
+        return None
+
+    def visit_ListRemoveStmt(self, node):
+        lst = self.env.get(node.list_name)
+        if not isinstance(lst, list):
+            raise EvaluatorError(f"'{node.list_name}' is not a list")
+        idx = self.visit(node.index_expr)
+        if not isinstance(idx, int):
+            raise EvaluatorError("List index must be an integer")
+        if idx < 1 or idx > len(lst):
+            raise EvaluatorError(f"Index {idx} is out of bounds for list '{node.list_name}'")
+        lst.pop(idx - 1)
+        return None
+
+    def visit_PropertyAssignStmt(self, node):
+        obj = self.env.get(node.obj_name)
+        if not isinstance(obj, dict):
+            raise EvaluatorError(f"'{node.obj_name}' is not an object")
+        prop = self.visit(node.prop_expr)
+        val = self.visit(node.val_expr)
+        obj[prop] = val
+        return None
+
+    def visit_LengthExpr(self, node):
+        val = self.visit(node.expr)
+        if isinstance(val, (str, list, dict)):
+            return len(val)
+        raise EvaluatorError("Cannot get length of this type")
+
+    def visit_SplitExpr(self, node):
+        string_val = self.visit(node.string_expr)
+        delim_val = self.visit(node.delimiter_expr)
+        if not isinstance(string_val, str) or not isinstance(delim_val, str):
+            raise EvaluatorError("Split requires strings")
+        return string_val.split(delim_val)
+
+    def visit_CasingExpr(self, node):
+        val = self.visit(node.expr)
+        if not isinstance(val, str):
+            raise EvaluatorError("Casing requires a string")
+        if node.op_str == "uppercase":
+            return val.upper()
+        else:
+            return val.lower()
+
+    def visit_ReplaceExpr(self, node):
+        target = self.visit(node.target_expr)
+        old = self.visit(node.old_expr)
+        new = self.visit(node.new_expr)
+        if not isinstance(target, str) or not isinstance(old, str) or not isinstance(new, str):
+            raise EvaluatorError("Replace requires strings")
+        return target.replace(old, new)

@@ -65,6 +65,17 @@ class TokenType(enum.Enum):
     IT = 'IT'
     FAILS = 'FAILS'
 
+    # Phase 5 Keywords
+    LENGTH = 'LENGTH'
+    SPLIT = 'SPLIT'
+    UPPERCASE = 'UPPERCASE'
+    LOWERCASE = 'LOWERCASE'
+    REPLACE = 'REPLACE'
+    CONTAINS = 'CONTAINS'
+    ADD = 'ADD'
+    REMOVE = 'REMOVE'
+    FROM = 'FROM'
+
 KEYWORDS = {
     'set': TokenType.SET,
     'to': TokenType.TO,
@@ -116,6 +127,15 @@ KEYWORDS = {
     'but': TokenType.BUT,
     'it': TokenType.IT,
     'fails': TokenType.FAILS,
+    'length': TokenType.LENGTH,
+    'split': TokenType.SPLIT,
+    'uppercase': TokenType.UPPERCASE,
+    'lowercase': TokenType.LOWERCASE,
+    'replace': TokenType.REPLACE,
+    'contains': TokenType.CONTAINS,
+    'add': TokenType.ADD,
+    'remove': TokenType.REMOVE,
+    'from': TokenType.FROM,
 }
 
 class Token:

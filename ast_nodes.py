@@ -120,3 +120,40 @@ class StringLiteral(ASTNode):
 class Identifier(ASTNode):
     def __init__(self, name):
         self.name = name
+
+# Phase 5 Nodes
+class LengthExpr(ASTNode):
+    def __init__(self, expr):
+        self.expr = expr
+
+class SplitExpr(ASTNode):
+    def __init__(self, string_expr, delimiter_expr):
+        self.string_expr = string_expr
+        self.delimiter_expr = delimiter_expr
+
+class CasingExpr(ASTNode):
+    def __init__(self, op_str, expr):
+        self.op_str = op_str # "uppercase" or "lowercase"
+        self.expr = expr
+
+class ReplaceExpr(ASTNode):
+    def __init__(self, old_expr, new_expr, target_expr):
+        self.old_expr = old_expr
+        self.new_expr = new_expr
+        self.target_expr = target_expr
+
+class ListAddStmt(ASTNode):
+    def __init__(self, item_expr, list_name):
+        self.item_expr = item_expr
+        self.list_name = list_name
+
+class ListRemoveStmt(ASTNode):
+    def __init__(self, index_expr, list_name):
+        self.index_expr = index_expr
+        self.list_name = list_name
+
+class PropertyAssignStmt(ASTNode):
+    def __init__(self, prop_expr, obj_name, val_expr):
+        self.prop_expr = prop_expr
+        self.obj_name = obj_name
+        self.val_expr = val_expr
