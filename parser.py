@@ -156,11 +156,25 @@ class Parser:
             self.eat(TokenType.IDENTIFIER)
             return ast_nodes.AskStmt(prompt_expr, var_name)
 
+        # "wait for 5 seconds"
+        if self.current_token.type == TokenType.WAIT:
+            self.eat(TokenType.WAIT)
+            self.skip_optional(TokenType.FOR)
+            seconds_expr = self.expr()
+            self.eat(TokenType.SECONDS)
+            return ast_nodes.WaitStmt(seconds_expr)
+
+        # "include 'math.nl'"
+        if self.current_token.type == TokenType.INCLUDE:
+            self.eat(TokenType.INCLUDE)
+            path_expr = self.expr()
+            return ast_nodes.IncludeStmt(path_expr)
+
         # "print x" or "print 'Hello' name"
         if self.current_token.type == TokenType.PRINT:
             self.eat(TokenType.PRINT)
             exprs = [self.expr()]
-            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE):
+            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE, TokenType.FETCH, TokenType.GET, TokenType.EXECUTE, TokenType.CONVERT):
                 exprs.append(self.expr())
             return ast_nodes.PrintStmt(exprs)
 
@@ -381,5 +395,37 @@ class Parser:
             self.eat(TokenType.IN)
             target_expr = self.expr()
             return ast_nodes.ReplaceExpr(old_expr, new_expr, target_expr)
+        elif token.type == TokenType.FETCH:
+            # "fetch from 'url'"
+            self.eat(TokenType.FETCH)
+            self.eat(TokenType.FROM)
+            return ast_nodes.FetchExpr(self.expr())
+        elif token.type == TokenType.GET:
+            # "get current time"
+            self.eat(TokenType.GET)
+            self.eat(TokenType.CURRENT)
+            self.eat(TokenType.TIME)
+            return ast_nodes.CurrentTimeExpr()
+        elif token.type == TokenType.EXECUTE:
+            # "execute command 'dir' in terminal"
+            self.eat(TokenType.EXECUTE)
+            self.eat(TokenType.COMMAND)
+            command_expr = self.expr()
+            self.eat(TokenType.IN)
+            self.eat(TokenType.TERMINAL)
+            return ast_nodes.ExecuteExpr(command_expr)
+        elif token.type == TokenType.CONVERT:
+            # "convert '5' to number"
+            self.eat(TokenType.CONVERT)
+            val_expr = self.expr()
+            self.eat(TokenType.TO)
+            if self.current_token.type == TokenType.NUMBER_TYPE:
+                self.eat(TokenType.NUMBER_TYPE)
+                return ast_nodes.ConvertExpr(val_expr, "number")
+            elif self.current_token.type == TokenType.STRING_TYPE:
+                self.eat(TokenType.STRING_TYPE)
+                return ast_nodes.ConvertExpr(val_expr, "string")
+            else:
+                self.error("Expected 'number' or 'string' after 'convert to'")
             
         self.error(f"Unexpected factor: '{token.value}'")

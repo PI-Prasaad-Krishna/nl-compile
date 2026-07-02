@@ -1,6 +1,9 @@
 import ast_nodes
 from lexer import TokenType
 from environment import Environment
+import urllib.request
+import time
+import subprocess
 
 class EvaluatorError(Exception):
     pass
@@ -292,3 +295,67 @@ class Evaluator:
         if not isinstance(target, str) or not isinstance(old, str) or not isinstance(new, str):
             raise EvaluatorError("Replace requires strings")
         return target.replace(old, new)
+
+    def visit_FetchExpr(self, node):
+        url = self.visit(node.url_expr)
+        if not isinstance(url, str):
+            raise EvaluatorError("URL must be a string")
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                return response.read().decode('utf-8')
+        except Exception as e:
+            raise EvaluatorError(f"Fetch failed: {e}")
+
+    def visit_CurrentTimeExpr(self, node):
+        return int(time.time())
+
+    def visit_ExecuteExpr(self, node):
+        cmd = self.visit(node.command_expr)
+        if not isinstance(cmd, str):
+            raise EvaluatorError("Command must be a string")
+        try:
+            return subprocess.getoutput(cmd)
+        except Exception as e:
+            raise EvaluatorError(f"Command execution failed: {e}")
+
+    def visit_ConvertExpr(self, node):
+        val = self.visit(node.expr)
+        try:
+            if node.target_type == "number":
+                return float(val) if '.' in str(val) else int(val)
+            elif node.target_type == "string":
+                return str(val)
+        except ValueError:
+            raise EvaluatorError(f"Cannot convert '{val}' to {node.target_type}")
+
+    def visit_WaitStmt(self, node):
+        secs = self.visit(node.seconds_expr)
+        if not isinstance(secs, (int, float)):
+            raise EvaluatorError("Wait time must be a number")
+        time.sleep(secs)
+        return None
+
+    def visit_IncludeStmt(self, node):
+        path = self.visit(node.path_expr)
+        if not isinstance(path, str):
+            raise EvaluatorError("Include path must be a string")
+            
+        try:
+            with open(path, 'r') as f:
+                content = f.read()
+        except FileNotFoundError:
+            raise EvaluatorError(f"Included file not found: {path}")
+            
+        from lexer import Lexer
+        from parser import Parser
+        
+        lexer = Lexer(content)
+        parser = Parser(lexer)
+        tree = parser.parse()
+        
+        if tree:
+            for stmt in tree.statements:
+                self.visit(stmt)
+                
+        return None

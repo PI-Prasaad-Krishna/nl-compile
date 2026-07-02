@@ -76,6 +76,21 @@ class TokenType(enum.Enum):
     REMOVE = 'REMOVE'
     FROM = 'FROM'
 
+    # Phase 6 Keywords
+    FETCH = 'FETCH'
+    WAIT = 'WAIT'
+    SECONDS = 'SECONDS'
+    GET = 'GET'
+    CURRENT = 'CURRENT'
+    TIME = 'TIME'
+    INCLUDE = 'INCLUDE'
+    EXECUTE = 'EXECUTE'
+    COMMAND = 'COMMAND'
+    TERMINAL = 'TERMINAL'
+    CONVERT = 'CONVERT'
+    NUMBER_TYPE = 'NUMBER_TYPE'
+    STRING_TYPE = 'STRING_TYPE'
+
 KEYWORDS = {
     'set': TokenType.SET,
     'to': TokenType.TO,
@@ -136,6 +151,19 @@ KEYWORDS = {
     'add': TokenType.ADD,
     'remove': TokenType.REMOVE,
     'from': TokenType.FROM,
+    'fetch': TokenType.FETCH,
+    'wait': TokenType.WAIT,
+    'seconds': TokenType.SECONDS,
+    'get': TokenType.GET,
+    'current': TokenType.CURRENT,
+    'time': TokenType.TIME,
+    'include': TokenType.INCLUDE,
+    'execute': TokenType.EXECUTE,
+    'command': TokenType.COMMAND,
+    'terminal': TokenType.TERMINAL,
+    'convert': TokenType.CONVERT,
+    'number': TokenType.NUMBER_TYPE,
+    'string': TokenType.STRING_TYPE,
 }
 
 class Token:

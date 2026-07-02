@@ -157,3 +157,28 @@ class PropertyAssignStmt(ASTNode):
         self.prop_expr = prop_expr
         self.obj_name = obj_name
         self.val_expr = val_expr
+
+# Phase 6 Nodes
+class FetchExpr(ASTNode):
+    def __init__(self, url_expr):
+        self.url_expr = url_expr
+
+class CurrentTimeExpr(ASTNode):
+    pass
+
+class ExecuteExpr(ASTNode):
+    def __init__(self, command_expr):
+        self.command_expr = command_expr
+
+class ConvertExpr(ASTNode):
+    def __init__(self, expr, target_type):
+        self.expr = expr
+        self.target_type = target_type # "number" or "string"
+
+class WaitStmt(ASTNode):
+    def __init__(self, seconds_expr):
+        self.seconds_expr = seconds_expr
+
+class IncludeStmt(ASTNode):
+    def __init__(self, path_expr):
+        self.path_expr = path_expr

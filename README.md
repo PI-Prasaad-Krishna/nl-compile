@@ -188,6 +188,48 @@ end but if it fails do
 end
 ```
 
+### 13. Time & Flow Control
+You can pause your scripts or fetch timestamps dynamically.
+
+```text
+set start to get current time
+wait for 5 seconds
+set finish to get current time
+print "Waited " finish minus start " seconds"
+```
+
+### 14. Shell Execution & System Commands
+You can run shell commands natively and capture their output directly into a variable!
+
+```text
+set output to execute command "dir" in terminal
+print output
+```
+
+### 15. Web & API Requests
+You can fetch data directly from the internet natively without importing any libraries!
+
+```text
+set data to fetch from "https://jsonplaceholder.typicode.com/todos/1"
+print data
+```
+
+### 16. Modules & Multi-File Projects
+You can import other `.nl` files to use their predefined variables and actions.
+
+```text
+include "math_helpers.nl"
+run double_number with 10
+```
+
+### 17. Type Conversions
+Dynamically cast data between text and math forms.
+
+```text
+set num to convert "100" to number
+set text to convert 25 to string
+```
+
 ## Architecture
 
 The interpreter is broken down into standard compiler components:
