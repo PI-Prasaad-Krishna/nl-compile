@@ -164,6 +164,28 @@ class Parser:
             self.eat(TokenType.SECONDS)
             return ast_nodes.WaitStmt(seconds_expr)
 
+        # "show alert 'Hello!'"
+        if self.current_token.type == TokenType.SHOW:
+            self.eat(TokenType.SHOW)
+            self.eat(TokenType.ALERT)
+            message_expr = self.expr()
+            return ast_nodes.ShowAlertStmt(message_expr)
+
+        # "prompt user with 'Enter name:' and set it to name"
+        if self.current_token.type == TokenType.PROMPT:
+            self.eat(TokenType.PROMPT)
+            self.eat(TokenType.USER)
+            self.eat(TokenType.WITH)
+            message_expr = self.expr()
+            self.skip_optional(TokenType.AND)
+            self.eat(TokenType.SET)
+            if self.current_token.type == TokenType.IDENTIFIER and self.current_token.value == 'it':
+                self.eat(TokenType.IDENTIFIER)
+            self.eat(TokenType.TO)
+            var_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            return ast_nodes.PromptUserStmt(message_expr, var_name)
+
         # "include 'math.nl'"
         if self.current_token.type == TokenType.INCLUDE:
             self.eat(TokenType.INCLUDE)
@@ -174,7 +196,7 @@ class Parser:
         if self.current_token.type == TokenType.PRINT:
             self.eat(TokenType.PRINT)
             exprs = [self.expr()]
-            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE, TokenType.FETCH, TokenType.GET, TokenType.EXECUTE, TokenType.CONVERT):
+            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE, TokenType.FETCH, TokenType.GET, TokenType.EXECUTE, TokenType.CONVERT, TokenType.PARSE):
                 exprs.append(self.expr())
             return ast_nodes.PrintStmt(exprs)
 
@@ -304,6 +326,24 @@ class Parser:
             self.eat(TokenType.CONTAINS)
             right = self.term()
             return ast_nodes.CompareOp(node, "contains", right)
+        elif self.current_token.type == TokenType.MATCHES:
+            # "x matches pattern y"
+            self.eat(TokenType.MATCHES)
+            self.eat(TokenType.PATTERN)
+            right = self.term()
+            return ast_nodes.CompareOp(node, "matches", right)
+        elif self.current_token.type == TokenType.STARTS:
+            # "x starts with y"
+            self.eat(TokenType.STARTS)
+            self.eat(TokenType.WITH)
+            right = self.term()
+            return ast_nodes.CompareOp(node, "starts", right)
+        elif self.current_token.type == TokenType.ENDS:
+            # "x ends with y"
+            self.eat(TokenType.ENDS)
+            self.eat(TokenType.WITH)
+            right = self.term()
+            return ast_nodes.CompareOp(node, "ends", right)
             
         return node
 
@@ -400,12 +440,25 @@ class Parser:
             self.eat(TokenType.FETCH)
             self.eat(TokenType.FROM)
             return ast_nodes.FetchExpr(self.expr())
+        elif token.type == TokenType.PARSE:
+            # "parse json from x"
+            self.eat(TokenType.PARSE)
+            self.eat(TokenType.JSON)
+            self.eat(TokenType.FROM)
+            return ast_nodes.ParseJsonExpr(self.expr())
         elif token.type == TokenType.GET:
-            # "get current time"
             self.eat(TokenType.GET)
-            self.eat(TokenType.CURRENT)
-            self.eat(TokenType.TIME)
-            return ast_nodes.CurrentTimeExpr()
+            if self.current_token.type == TokenType.CURRENT:
+                # "get current time"
+                self.eat(TokenType.CURRENT)
+                self.eat(TokenType.TIME)
+                return ast_nodes.CurrentTimeExpr()
+            elif self.current_token.type == TokenType.SECRET:
+                # "get secret 'KEY'"
+                self.eat(TokenType.SECRET)
+                return ast_nodes.GetSecretExpr(self.expr())
+            else:
+                self.error("Expected 'current' or 'secret' after 'get'")
         elif token.type == TokenType.EXECUTE:
             # "execute command 'dir' in terminal"
             self.eat(TokenType.EXECUTE)
@@ -425,7 +478,10 @@ class Parser:
             elif self.current_token.type == TokenType.STRING_TYPE:
                 self.eat(TokenType.STRING_TYPE)
                 return ast_nodes.ConvertExpr(val_expr, "string")
+            elif self.current_token.type == TokenType.JSON:
+                self.eat(TokenType.JSON)
+                return ast_nodes.ConvertExpr(val_expr, "json")
             else:
-                self.error("Expected 'number' or 'string' after 'convert to'")
+                self.error("Expected 'number', 'string', or 'json' after 'convert to'")
             
         self.error(f"Unexpected factor: '{token.value}'")

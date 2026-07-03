@@ -222,12 +222,38 @@ include "math_helpers.nl"
 run double_number with 10
 ```
 
-### 17. Type Conversions
-Dynamically cast data between text and math forms.
+### 17. Type Conversions & JSON
+Dynamically cast data between text, numbers, and JSON objects!
 
 ```text
 set num to convert "100" to number
 set text to convert 25 to string
+set person to parse json from '{"name": "Alice"}'
+set json_text to convert person to json
+```
+
+### 18. Native UI Graphical Dialogs
+You can spawn native OS alert boxes and input prompts!
+
+```text
+show alert "Your script has finished running!"
+prompt user with "Enter your password:" and set it to pass
+```
+
+### 19. System Secrets
+Securely read environment variables from your OS.
+
+```text
+set api_key to get secret "GITHUB_TOKEN"
+```
+
+### 20. Advanced String Matching
+Check prefixes, suffixes, or use wildcards to match patterns!
+
+```text
+if email matches pattern "*@*.com" then print "Valid!"
+if name starts with "Mr." then print "Hello sir"
+if file ends with ".txt" then print "Text file"
 ```
 
 ## Architecture

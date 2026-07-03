@@ -4,6 +4,9 @@ from environment import Environment
 import urllib.request
 import time
 import subprocess
+import json
+import os
+import fnmatch
 
 class EvaluatorError(Exception):
     pass
@@ -147,6 +150,12 @@ class Evaluator:
             return left_val == right_val
         elif node.op_str == "contains":
             return right_val in left_val
+        elif node.op_str == "matches":
+            return fnmatch.fnmatch(str(left_val), str(right_val))
+        elif node.op_str == "starts":
+            return str(left_val).startswith(str(right_val))
+        elif node.op_str == "ends":
+            return str(left_val).endswith(str(right_val))
         raise EvaluatorError(f"Unknown comparison: {node.op_str}")
 
     def visit_LogicalOp(self, node):
@@ -326,6 +335,8 @@ class Evaluator:
                 return float(val) if '.' in str(val) else int(val)
             elif node.target_type == "string":
                 return str(val)
+            elif node.target_type == "json":
+                return json.dumps(val)
         except ValueError:
             raise EvaluatorError(f"Cannot convert '{val}' to {node.target_type}")
 
@@ -359,3 +370,56 @@ class Evaluator:
                 self.visit(stmt)
                 
         return None
+
+    def visit_ParseJsonExpr(self, node):
+        text = self.visit(node.text_expr)
+        if not isinstance(text, str):
+            raise EvaluatorError("JSON parsing requires a string")
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            raise EvaluatorError(f"Invalid JSON: {e}")
+
+    def visit_GetSecretExpr(self, node):
+        key = self.visit(node.key_expr)
+        if not isinstance(key, str):
+            raise EvaluatorError("Secret key must be a string")
+        val = os.getenv(key)
+        if val is None:
+            raise EvaluatorError(f"Secret '{key}' not found in environment")
+        return val
+
+    def visit_ShowAlertStmt(self, node):
+        msg = self.visit(node.message_expr)
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        messagebox.showinfo("Alert", str(msg))
+        root.destroy()
+        return None
+
+    def visit_PromptUserStmt(self, node):
+        msg = self.visit(node.message_expr)
+        import tkinter as tk
+        from tkinter import simpledialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        user_input = simpledialog.askstring("Prompt", str(msg))
+        root.destroy()
+        
+        if user_input is None:
+            user_input = ""
+            
+        try:
+            if '.' in user_input:
+                val = float(user_input)
+            else:
+                val = int(user_input)
+        except ValueError:
+            val = user_input
+            
+        self.env.set(node.var_name, val)
+        return val

@@ -91,6 +91,19 @@ class TokenType(enum.Enum):
     NUMBER_TYPE = 'NUMBER_TYPE'
     STRING_TYPE = 'STRING_TYPE'
 
+    # Phase 7 Keywords
+    PARSE = 'PARSE'
+    JSON = 'JSON'
+    SHOW = 'SHOW'
+    ALERT = 'ALERT'
+    PROMPT = 'PROMPT'
+    USER = 'USER'
+    SECRET = 'SECRET'
+    MATCHES = 'MATCHES'
+    PATTERN = 'PATTERN'
+    STARTS = 'STARTS'
+    ENDS = 'ENDS'
+
 KEYWORDS = {
     'set': TokenType.SET,
     'to': TokenType.TO,
@@ -164,6 +177,17 @@ KEYWORDS = {
     'convert': TokenType.CONVERT,
     'number': TokenType.NUMBER_TYPE,
     'string': TokenType.STRING_TYPE,
+    'parse': TokenType.PARSE,
+    'json': TokenType.JSON,
+    'show': TokenType.SHOW,
+    'alert': TokenType.ALERT,
+    'prompt': TokenType.PROMPT,
+    'user': TokenType.USER,
+    'secret': TokenType.SECRET,
+    'matches': TokenType.MATCHES,
+    'pattern': TokenType.PATTERN,
+    'starts': TokenType.STARTS,
+    'ends': TokenType.ENDS,
 }
 
 class Token:

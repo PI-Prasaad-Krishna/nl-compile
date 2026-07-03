@@ -182,3 +182,21 @@ class WaitStmt(ASTNode):
 class IncludeStmt(ASTNode):
     def __init__(self, path_expr):
         self.path_expr = path_expr
+
+# Phase 7 Nodes
+class ParseJsonExpr(ASTNode):
+    def __init__(self, text_expr):
+        self.text_expr = text_expr
+
+class GetSecretExpr(ASTNode):
+    def __init__(self, key_expr):
+        self.key_expr = key_expr
+
+class ShowAlertStmt(ASTNode):
+    def __init__(self, message_expr):
+        self.message_expr = message_expr
+
+class PromptUserStmt(ASTNode):
+    def __init__(self, message_expr, var_name):
+        self.message_expr = message_expr
+        self.var_name = var_name
