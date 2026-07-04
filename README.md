@@ -21,8 +21,8 @@
 Clone the repository and run the interpreter directly:
 
 ```bash
-git clone <your-repo-url>
-cd nl-lang
+git clone https://github.com/PI-Prasaad-Krishna/nl-compile
+cd nl-compile
 ```
 
 ### Running the REPL
