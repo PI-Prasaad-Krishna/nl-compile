@@ -104,6 +104,18 @@ class TokenType(enum.Enum):
     STARTS = 'STARTS'
     ENDS = 'ENDS'
 
+    # Phase 8 Keywords
+    BACKGROUND = 'BACKGROUND'
+    FOLDER = 'FOLDER'
+    DELETE = 'DELETE'
+    FILES = 'FILES'
+    TEMPLATE = 'TEMPLATE'
+    RANDOM = 'RANDOM'
+    BETWEEN = 'BETWEEN'
+    ROUND = 'ROUND'
+    NEAREST = 'NEAREST'
+    INTEGER = 'INTEGER'
+
 KEYWORDS = {
     'set': TokenType.SET,
     'to': TokenType.TO,
@@ -188,6 +200,16 @@ KEYWORDS = {
     'pattern': TokenType.PATTERN,
     'starts': TokenType.STARTS,
     'ends': TokenType.ENDS,
+    'background': TokenType.BACKGROUND,
+    'folder': TokenType.FOLDER,
+    'delete': TokenType.DELETE,
+    'files': TokenType.FILES,
+    'template': TokenType.TEMPLATE,
+    'random': TokenType.RANDOM,
+    'between': TokenType.BETWEEN,
+    'round': TokenType.ROUND,
+    'nearest': TokenType.NEAREST,
+    'integer': TokenType.INTEGER,
 }
 
 class Token:
@@ -278,6 +300,26 @@ class Lexer:
                 start_col = self.column
                 self.advance()
                 return Token(TokenType.COMMA, ',', self.line, start_col)
+                
+            if self.current_char == '+':
+                start_col = self.column
+                self.advance()
+                return Token(TokenType.PLUS, '+', self.line, start_col)
+                
+            if self.current_char == '-':
+                start_col = self.column
+                self.advance()
+                return Token(TokenType.MINUS, '-', self.line, start_col)
+                
+            if self.current_char == '*':
+                start_col = self.column
+                self.advance()
+                return Token(TokenType.TIMES, '*', self.line, start_col)
+                
+            if self.current_char == '/':
+                start_col = self.column
+                self.advance()
+                return Token(TokenType.DIVIDED, '/', self.line, start_col)
                 
             if self.current_char.isdigit():
                 return self.number()

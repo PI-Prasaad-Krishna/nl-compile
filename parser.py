@@ -55,39 +55,50 @@ class Parser:
         # "create object user containing 'name' as 'Alice' and 'age' as 25"
         if self.current_token.type == TokenType.CREATE:
             self.eat(TokenType.CREATE)
-            
-            if self.current_token.type == TokenType.LIST:
+            if self.current_token.type == TokenType.FOLDER:
+                self.eat(TokenType.FOLDER)
+                return ast_nodes.CreateFolderStmt(self.expr())
+            elif self.current_token.type == TokenType.LIST:
                 self.eat(TokenType.LIST)
                 list_name = self.current_token.value
                 self.eat(TokenType.IDENTIFIER)
                 self.eat(TokenType.CONTAINING)
                 
-                items = []
-                items.append(self.expr())
+                elements = [self.expr()]
                 while self.current_token.type == TokenType.COMMA:
                     self.eat(TokenType.COMMA)
-                    items.append(self.expr())
-                return ast_nodes.VarAssign(list_name, ast_nodes.ListCreateExpr(items))
-                
+                    elements.append(self.expr())
+                return ast_nodes.CreateListStmt(list_name, elements)
             elif self.current_token.type == TokenType.OBJECT:
                 self.eat(TokenType.OBJECT)
                 obj_name = self.current_token.value
                 self.eat(TokenType.IDENTIFIER)
                 self.eat(TokenType.CONTAINING)
                 
-                pairs = []
-                key = self.expr()
+                keys = []
+                vals = []
+                keys.append(self.expr())
                 self.eat(TokenType.AS)
-                val = self.expr()
-                pairs.append((key, val))
+                vals.append(self.expr())
+                
                 while self.current_token.type == TokenType.COMMA:
                     self.eat(TokenType.COMMA)
-                    key = self.expr()
+                    keys.append(self.expr())
                     self.eat(TokenType.AS)
-                    val = self.expr()
-                    pairs.append((key, val))
-                return ast_nodes.VarAssign(obj_name, ast_nodes.ObjectCreateExpr(pairs))
+                    vals.append(self.expr())
                 
+                return ast_nodes.CreateObjectStmt(obj_name, keys, vals)
+            elif self.current_token.type == TokenType.IDENTIFIER:
+                template_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                obj_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.WITH)
+                values = [self.expr()]
+                while self.current_token.type == TokenType.COMMA:
+                    self.eat(TokenType.COMMA)
+                    values.append(self.expr())
+                return ast_nodes.CreateTemplatedObjectStmt(template_name, obj_name, values)
             else:
                 self.skip_optional(TokenType.VARIABLE)
                 var_name = self.current_token.value
@@ -123,6 +134,41 @@ class Parser:
                 self.eat(TokenType.TO)
                 expr = self.expr()
                 return ast_nodes.VarAssign(var_name, expr)
+
+        # "define template Car with 'make', 'model'" OR "define action..."
+        if self.current_token.type == TokenType.DEFINE:
+            self.eat(TokenType.DEFINE)
+            if self.current_token.type == TokenType.TEMPLATE:
+                self.eat(TokenType.TEMPLATE)
+                name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.WITH)
+                props = []
+                props.append(self.expr())
+                while self.current_token.type == TokenType.COMMA:
+                    self.eat(TokenType.COMMA)
+                    props.append(self.expr())
+                return ast_nodes.DefineTemplateStmt(name, props)
+            else:
+                self.eat(TokenType.ACTION)
+                action_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                params = []
+                if self.current_token.type == TokenType.WITH:
+                    self.eat(TokenType.WITH)
+                    params.append(self.current_token.value)
+                    self.eat(TokenType.IDENTIFIER)
+                    while self.current_token.type == TokenType.AND:
+                        self.eat(TokenType.AND)
+                        if self.current_token.type == TokenType.DO:
+                            break
+                        params.append(self.current_token.value)
+                        self.eat(TokenType.IDENTIFIER)
+                
+                self.eat(TokenType.DO)
+                block = self.parse_body()
+                self.eat(TokenType.END)
+                return ast_nodes.ActionDefStmt(action_name, params, block)
 
         # "add x to colors"
         if self.current_token.type == TokenType.ADD:
@@ -192,11 +238,17 @@ class Parser:
             path_expr = self.expr()
             return ast_nodes.IncludeStmt(path_expr)
 
+        # "delete file 'temp.txt'"
+        if self.current_token.type == TokenType.DELETE:
+            self.eat(TokenType.DELETE)
+            self.eat(TokenType.FILE)
+            return ast_nodes.DeleteFileStmt(self.expr())
+
         # "print x" or "print 'Hello' name"
         if self.current_token.type == TokenType.PRINT:
             self.eat(TokenType.PRINT)
             exprs = [self.expr()]
-            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE, TokenType.FETCH, TokenType.GET, TokenType.EXECUTE, TokenType.CONVERT, TokenType.PARSE):
+            while self.current_token.type in (TokenType.NUMBER, TokenType.STRING, TokenType.IDENTIFIER, TokenType.ITEM, TokenType.PROPERTY, TokenType.READ, TokenType.RUN, TokenType.LENGTH, TokenType.SPLIT, TokenType.UPPERCASE, TokenType.LOWERCASE, TokenType.REPLACE, TokenType.FETCH, TokenType.GET, TokenType.EXECUTE, TokenType.CONVERT, TokenType.PARSE, TokenType.ROUND):
                 exprs.append(self.expr())
             return ast_nodes.PrintStmt(exprs)
 
@@ -279,13 +331,23 @@ class Parser:
         # Backwards compatibility: "run greet with 'Alice'" as standalone statement
         if self.current_token.type == TokenType.RUN:
             self.eat(TokenType.RUN)
-            func_name = self.current_token.value
-            self.eat(TokenType.IDENTIFIER)
-            self.eat(TokenType.WITH)
-            arg_expr = self.expr()
-            return ast_nodes.FuncCallStmt(func_name, arg_expr)
+            if self.current_token.type == TokenType.IN:
+                self.eat(TokenType.IN)
+                self.eat(TokenType.BACKGROUND)
+                block = self.parse_body()
+                return ast_nodes.BackgroundStmt(block)
+            else:
+                func_name = self.current_token.value
+                self.eat(TokenType.IDENTIFIER)
+                self.eat(TokenType.WITH)
+                arg_expr = self.expr()
+                return ast_nodes.FuncCallStmt(func_name, arg_expr)
 
-        self.error(f"Invalid statement starting with '{self.current_token.value}'")
+        # Fallback: if we didn't match a statement, it might be an expression statement
+        try:
+            return ast_nodes.ExprStmt(self.expr())
+        except Exception:
+            self.error(f"Invalid statement starting with '{self.current_token.value}'")
 
     def expr(self):
         node = self.expr_compare()
@@ -360,7 +422,7 @@ class Parser:
                 self.eat(TokenType.TIMES)
             elif token.type == TokenType.DIVIDED:
                 self.eat(TokenType.DIVIDED)
-                self.eat(TokenType.BY)
+                self.skip_optional(TokenType.BY)
                 
             right = self.factor()
             node = ast_nodes.BinOp(left=node, op=token, right=right)
@@ -369,6 +431,11 @@ class Parser:
 
     def factor(self):
         token = self.current_token
+        
+        if token.type in (TokenType.PLUS, TokenType.MINUS):
+            self.eat(token.type)
+            return ast_nodes.UnaryOp(token, self.factor())
+            
         if token.type == TokenType.NUMBER:
             self.eat(TokenType.NUMBER)
             return ast_nodes.NumberLiteral(token.value)
@@ -457,8 +524,29 @@ class Parser:
                 # "get secret 'KEY'"
                 self.eat(TokenType.SECRET)
                 return ast_nodes.GetSecretExpr(self.expr())
+            elif self.current_token.type == TokenType.FILES:
+                self.eat(TokenType.FILES)
+                self.eat(TokenType.IN)
+                self.eat(TokenType.FOLDER)
+                return ast_nodes.GetFilesExpr(self.expr())
+            elif self.current_token.type == TokenType.RANDOM:
+                self.eat(TokenType.RANDOM)
+                self.eat(TokenType.NUMBER_TYPE)
+                self.eat(TokenType.BETWEEN)
+                min_expr = self.expr_compare()
+                self.eat(TokenType.AND)
+                max_expr = self.expr_compare()
+                return ast_nodes.RandomExpr(min_expr, max_expr)
             else:
-                self.error("Expected 'current' or 'secret' after 'get'")
+                self.error("Expected 'current', 'secret', 'files', or 'random' after 'get'")
+        elif token.type == TokenType.ROUND:
+            # "round 3.14 to nearest integer"
+            self.eat(TokenType.ROUND)
+            expr = self.expr()
+            self.eat(TokenType.TO)
+            self.eat(TokenType.NEAREST)
+            self.eat(TokenType.INTEGER)
+            return ast_nodes.RoundExpr(expr)
         elif token.type == TokenType.EXECUTE:
             # "execute command 'dir' in terminal"
             self.eat(TokenType.EXECUTE)

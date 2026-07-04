@@ -256,6 +256,42 @@ if name starts with "Mr." then print "Hello sir"
 if file ends with ".txt" then print "Text file"
 ```
 
+### 21. Object-Oriented Templates (Structs)
+Enforce rigid blueprints for the objects you create.
+
+```text
+define template Car with "make", "model", "year"
+create Car ride with "Toyota", "Corolla", 2015
+```
+
+### 22. Concurrency (Background Tasks)
+Run heavy logic in the background so your main script doesn't freeze.
+
+```text
+run in background do
+    wait for 5 seconds
+    print "Done in background!"
+end
+print "Prints immediately!"
+```
+
+### 23. File System Management
+Create folders, read folder directories, and delete files automatically.
+
+```text
+create folder "images"
+set folder_files to get files in folder "images"
+delete file "temp.txt"
+```
+
+### 24. Math and Randomness
+You can quickly generate random variables and round decimals natively.
+
+```text
+set num to get random number between 1 and 10
+set clean to round 3.14 to nearest integer
+```
+
 ## Architecture
 
 The interpreter is broken down into standard compiler components:

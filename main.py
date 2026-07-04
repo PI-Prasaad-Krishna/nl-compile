@@ -10,7 +10,7 @@ def highlight_error(text, line, column):
         print(error_line)
         print(' ' * (column - 1) + '^')
 
-def run(text, evaluator=None):
+def run(text, evaluator=None, is_repl=False):
     try:
         lexer = Lexer(text)
         parser = Parser(lexer)
@@ -21,7 +21,13 @@ def run(text, evaluator=None):
         else:
             evaluator.tree = tree
             
-        evaluator.evaluate()
+        result = evaluator.evaluate()
+        
+        if is_repl and result is not None and tree and len(tree.statements) == 1:
+            stmt_type = type(tree.statements[-1]).__name__
+            if stmt_type not in ('PrintStmt', 'VarAssign', 'PropertyAssignStmt', 'ListAddStmt', 'ListRemoveStmt', 'CreateObjectStmt', 'CreateListStmt', 'DefineTemplateStmt', 'CreateTemplatedObjectStmt', 'FileWriteStmt', 'BackgroundStmt', 'CreateFolderStmt', 'DeleteFileStmt'):
+                print(result)
+        
         return evaluator
     except LexerError as e:
         print(f"SyntaxError (Lexer): {e}")
@@ -53,7 +59,7 @@ def main():
                 if text.lower() == 'exit':
                     break
                 if text.strip():
-                    run(text, repl_evaluator)
+                    run(text, repl_evaluator, is_repl=True)
             except EOFError:
                 break
             except KeyboardInterrupt:

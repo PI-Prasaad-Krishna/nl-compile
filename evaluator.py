@@ -7,6 +7,8 @@ import subprocess
 import json
 import os
 import fnmatch
+import random
+import threading
 
 class EvaluatorError(Exception):
     pass
@@ -423,3 +425,92 @@ class Evaluator:
             
         self.env.set(node.var_name, val)
         return val
+
+    def visit_BackgroundStmt(self, node):
+        def task():
+            self.visit(node.block)
+        
+        t = threading.Thread(target=task)
+        t.daemon = True
+        t.start()
+        return None
+
+    def visit_CreateFolderStmt(self, node):
+        folder = self.visit(node.name_expr)
+        if not isinstance(folder, str):
+            raise EvaluatorError("Folder name must be a string")
+        os.makedirs(folder, exist_ok=True)
+        return None
+
+    def visit_DeleteFileStmt(self, node):
+        target = self.visit(node.name_expr)
+        if not isinstance(target, str):
+            raise EvaluatorError("Target must be a string")
+        try:
+            if os.path.isdir(target):
+                os.rmdir(target)
+            else:
+                os.remove(target)
+        except OSError as e:
+            raise EvaluatorError(f"Could not delete {target}: {e}")
+        return None
+
+    def visit_GetFilesExpr(self, node):
+        folder = self.visit(node.name_expr)
+        if not isinstance(folder, str):
+            raise EvaluatorError("Folder name must be a string")
+        try:
+            return os.listdir(folder)
+        except OSError as e:
+            raise EvaluatorError(f"Could not list files in {folder}: {e}")
+
+    def visit_DefineTemplateStmt(self, node):
+        props = [self.visit(p) for p in node.properties]
+        self.env.set(node.name, {"_is_template": True, "properties": props})
+        return None
+
+    def visit_CreateTemplatedObjectStmt(self, node):
+        template = self.env.get(node.template_name)
+        if not template or not isinstance(template, dict) or not template.get("_is_template"):
+            raise EvaluatorError(f"Template '{node.template_name}' not defined")
+            
+        vals = [self.visit(v) for v in node.values]
+        props = template["properties"]
+        
+        if len(vals) != len(props):
+            raise EvaluatorError(f"Template '{node.template_name}' requires {len(props)} values, got {len(vals)}")
+            
+        obj = {}
+        for k, v in zip(props, vals):
+            obj[k] = v
+            
+        self.env.set(node.obj_name, obj)
+        return obj
+
+    def visit_RandomExpr(self, node):
+        min_val = self.visit(node.min_expr)
+        max_val = self.visit(node.max_expr)
+        if not isinstance(min_val, (int, float)) or not isinstance(max_val, (int, float)):
+            raise EvaluatorError("Random range must be numbers")
+        return random.randint(int(min_val), int(max_val))
+
+    def visit_RoundExpr(self, node):
+        val = self.visit(node.expr)
+        if not isinstance(val, (int, float)):
+            raise EvaluatorError("Cannot round non-number")
+        return round(val)
+
+    def visit_ExprStmt(self, node):
+        return self.visit(node.expr)
+
+    def visit_UnaryOp(self, node):
+        val = self.visit(node.expr)
+        if node.op.type == TokenType.MINUS:
+            if not isinstance(val, (int, float)):
+                raise EvaluatorError("Cannot negate a non-number")
+            return -val
+        elif node.op.type == TokenType.PLUS:
+            if not isinstance(val, (int, float)):
+                raise EvaluatorError("Cannot apply unary plus to a non-number")
+            return val
+        raise EvaluatorError(f"Unknown unary operator: {node.op.value}")

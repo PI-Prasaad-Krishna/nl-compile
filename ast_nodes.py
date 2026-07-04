@@ -200,3 +200,49 @@ class PromptUserStmt(ASTNode):
     def __init__(self, message_expr, var_name):
         self.message_expr = message_expr
         self.var_name = var_name
+
+# Phase 8 Nodes
+class BackgroundStmt(ASTNode):
+    def __init__(self, block):
+        self.block = block
+
+class CreateFolderStmt(ASTNode):
+    def __init__(self, name_expr):
+        self.name_expr = name_expr
+
+class DeleteFileStmt(ASTNode):
+    def __init__(self, name_expr):
+        self.name_expr = name_expr
+
+class GetFilesExpr(ASTNode):
+    def __init__(self, name_expr):
+        self.name_expr = name_expr
+
+class DefineTemplateStmt(ASTNode):
+    def __init__(self, name, properties):
+        self.name = name
+        self.properties = properties
+
+class CreateTemplatedObjectStmt(ASTNode):
+    def __init__(self, template_name, obj_name, values):
+        self.template_name = template_name
+        self.obj_name = obj_name
+        self.values = values
+
+class RandomExpr(ASTNode):
+    def __init__(self, min_expr, max_expr):
+        self.min_expr = min_expr
+        self.max_expr = max_expr
+
+class RoundExpr(ASTNode):
+    def __init__(self, expr):
+        self.expr = expr
+
+class ExprStmt(ASTNode):
+    def __init__(self, expr):
+        self.expr = expr
+
+class UnaryOp(ASTNode):
+    def __init__(self, op, expr):
+        self.op = op
+        self.expr = expr
