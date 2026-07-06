@@ -44,9 +44,10 @@ python main.py test.nl
 NL is designed to be read aloud. The official syntax documentation has been moved to a dedicated, interactive website for a better reading experience!
 
 ### Viewing the Documentation
-To view the full documentation, open the local documentation website:
-1. Navigate to the `docs-site` directory.
-2. Open `index.html` in your browser (if you run `npm run dev`, you can view it on your local server).
+You can read the full, interactive documentation online here:
+**[NL Webpage](https://nl-compile.vercel.app/)**
+
+*(To run the documentation site locally, navigate to the `docs-site` directory and run `npm run dev`.)*
 
 ## Architecture
 
