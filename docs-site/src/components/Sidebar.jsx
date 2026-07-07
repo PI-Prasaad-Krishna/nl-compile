@@ -26,7 +26,7 @@ export default function Sidebar() {
               className="nav-link"
               onClick={() => handleScroll(section.id)}
             >
-              {section.id}. {section.title}
+              {section.title}
             </button>
           ))}
         </nav>
