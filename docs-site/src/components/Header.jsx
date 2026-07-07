@@ -6,9 +6,9 @@ export default function Header() {
     <header className="top-header">
       <Link to="/" className="header-logo">NL // Docs</Link>
       <div className="header-nav">
-        <Link to="/docs" className="header-link">Documentation</Link>
+        <Link to="/docs" className="header-link">Docs</Link>
         <a href="https://github.com/PI-Prasaad-Krishna/nl-compile" target="_blank" rel="noreferrer" className="header-btn">
-          View on GitHub
+          GitHub
         </a>
       </div>
     </header>
