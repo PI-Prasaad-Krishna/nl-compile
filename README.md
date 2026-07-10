@@ -17,26 +17,34 @@
 ### Prerequisites
 - Python 3.x (No external libraries required!)
 
-### Installation
-Clone the repository and run the interpreter directly:
+### Global Installation (Recommended)
+You can install NL globally on your machine using `pip`. This allows you to run the `nl` command anywhere!
+
+```bash
+pip install git+https://github.com/PI-Prasaad-Krishna/nl-compile.git
+```
+
+### Running the REPL
+To start the interactive Read-Eval-Print Loop (REPL), simply type:
+
+```bash
+nl
+```
+
+### Executing a Script
+To run a `.nl` file, pass the file path to the `nl` command:
+
+```bash
+nl script.nl
+```
+
+### Local Development Installation
+If you want to modify the language source code, clone the repository and install it locally:
 
 ```bash
 git clone https://github.com/PI-Prasaad-Krishna/nl-compile
 cd nl-compile
-```
-
-### Running the REPL
-To start the interactive Read-Eval-Print Loop (REPL), simply run `main.py` without any arguments:
-
-```bash
-python main.py
-```
-
-### Executing a Script
-To run a `.nl` file, pass the file path as an argument:
-
-```bash
-python main.py test.nl
+pip install -e .
 ```
 
 ## Syntax & Documentation

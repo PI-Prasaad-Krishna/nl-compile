@@ -1,5 +1,11 @@
 export const syntaxSections = [
   {
+    id: "installation",
+    title: "0. Installation",
+    description: "NL is built on top of Python. You can install the interpreter globally on any Operating System (Windows, macOS, Linux) directly via pip. Once installed, simply type `nl <filename>.nl` in your terminal to run a script, or just `nl` to start the interactive REPL!",
+    code: `pip install git+https://github.com/PI-Prasaad-Krishna/nl-compile.git`
+  },
+  {
     id: "variables",
     title: "1. Variables",
     description: "Variables are dynamically typed and can be created or updated using the `set` and `to` keywords. You can optionally use `create variable <name> and set it to <value>` for a more verbose sentence.",
